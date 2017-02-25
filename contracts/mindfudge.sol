@@ -5,8 +5,7 @@ contract mindfudge  {
   {
     address addr;
     bool[5] cards;
-    uint playeridx;
-    uint wins;
+      uint wins;
   }
 
   address owner;
@@ -17,6 +16,10 @@ contract mindfudge  {
   /*later: 
   //uint amount
   //uint lenGame = 5;*/
+  event waiting4(address slowDude);
+  event cardsRevealed(uint card1, uint card2);
+  event logString(string);
+  event gameEnded(string text, uint winnerIdx);
 
 
   function mindfudge(address enemy)
@@ -24,14 +27,12 @@ contract mindfudge  {
       owner = msg.sender;
       players[0] = Player({
               addr: owner,
-              playeridx:0,
-              cards:[true, true, true ,true, true],
+                cards:[true, true, true ,true, true],
               wins: 0
               });
       players[1] = Player({
               addr: enemy,
-              playeridx:1,
-              cards:[true, true, true ,true, true],
+                cards:[true, true, true ,true, true],
               wins: 0
               });              
   }
@@ -40,13 +41,17 @@ contract mindfudge  {
    function dummyCard(uint card){
       if (msg.sender == players[0].addr)
         {
-        middle[0]=card;
+        middle[0] = card;
+        logString("card played!");
+        waiting4(players[1].addr);
         }
         else {
-            middle[1]=card;
+          middle[1] = card;
+          logString("card played!");
+          waiting4(players[0].addr);
         }
         /*both players have submitted a card?*/
-        if (middle[0] != 0 && middle[1] !=0)
+        if (middle[0] != 0  && middle[1] != 0)
         {
         reveal();
         }
@@ -60,22 +65,47 @@ contract mindfudge  {
         {
         pIdx = 0;
         }
-      if (msg.sender == players[1].addr)
+      else
         {
-          pIdx = 1;
-        } else { throw;} /*only the two players can play
+          if (msg.sender == players[1].addr)
+            {
+              pIdx = 1;
+            }
+          else
+            {
+              logString("you are not part of the game");
+            throw;
+            }
+        }
       //check whether the card has not been played  before AND
-      // whether the player has not played in this round before*/
-      if (players[pIdx].cards[card] && middle[pIdx] == 0)
+      // whether the player has not played in this round before
+      if (players[pIdx].cards[card-1]==true)
         {
-          players[pIdx].cards[card] = false;
-          middle[pIdx] = card;
+          if(middle[pIdx] == 0)
+            {
+              players[pIdx].cards[card-1] = false;
+              middle[pIdx] = card;
+              //fire events:
+              logString("card Played!Now waiting 4:");
+            }
+          else
+            {
+              logString("there already was a card in the middle");
+            }
+        }
+      else
+        {
+          logString("illegal card! (already played or not part of game");
         }
       /*both players have submitted a card?*/
-      if (middle[0] != 0 && middle[1] !=0)
+      if (middle[0] != 0 && middle[1] != 0)
         {
         reveal();
         }
+      else
+        {
+          waiting4(players[1-1**pIdx].addr);
+        } 
     }
 
     /*find out whos card is higher and assign wins*/
@@ -92,6 +122,9 @@ contract mindfudge  {
         } else {
         winneridx = 1;
       }
+      //fire event:
+      cardsRevealed(middle[0], middle[1]);
+
       /* augment winners score*/
       players[winneridx].wins += 1 + drawpot;
       /*and reset possible extrapoints*/
@@ -110,6 +143,7 @@ contract mindfudge  {
     //later: payOut Winner*/
     function endGame(uint winner) internal
     {
+      gameEnded("game is Over and the winner is: ", winner);
       mindfudger = players[winner].addr;
     //*end Game and payout everything to the Winner
     //suicide(mindfudger);*/
@@ -141,6 +175,10 @@ contract mindfudge  {
     }
     function getMiddle() constant returns (uint[2]){
       return middle;
+    }
+    /*convenience function for me*/
+    function showCards(uint pIdx) constant returns (bool[5]){
+      return players[pIdx].cards;
     }
 
 }
