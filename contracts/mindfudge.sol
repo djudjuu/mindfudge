@@ -1,4 +1,4 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.8;
 contract mindfudge  {
   /* This declares a new complex type for a Player*/
   struct Player
@@ -105,4 +105,12 @@ contract mindfudge  {
     function score() returns (uint[2] scores) {
         scores = [ players[0].wins, players[1].wins ];
     }
+    
+    function owner() returns (address){
+        return players[0].addr;
+    }
+    function matchup() returns (address[2]){
+      return [players[0].addr, players[1].addr];
+    }
+      
 }

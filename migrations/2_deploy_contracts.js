@@ -1,8 +1,5 @@
-var ConvertLib = artifacts.require("./ConvertLib.sol");
-var MetaCoin = artifacts.require("./MetaCoin.sol");
-
+var mindfudge = artifacts.require("./mindfudge.sol");
+var oppo = "0xaec0b8a94ec86fdac2ccf53d5753fd238d3cd871"
 module.exports = function(deployer) {
-  deployer.deploy(ConvertLib);
-  deployer.link(ConvertLib, MetaCoin);
-  deployer.deploy(MetaCoin);
+    deployer.deploy(mindfudge, oppo);
 };
