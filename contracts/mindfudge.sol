@@ -1,6 +1,7 @@
 pragma solidity ^0.4.8;
 contract mindfudge  {
   /* This declares a new complex type for a Player*/
+  address owner;
   struct Player
   {
     address addr;
@@ -18,8 +19,9 @@ contract mindfudge  {
     
   function mindfudge(address enemy)
   {
+      owner = msg.sender;
       players[0] = Player({
-              addr: msg.sender,
+              addr: owner,
               playeridx:0,
               cards:[true, true, true ,true, true],
               wins: 0
@@ -96,21 +98,17 @@ contract mindfudge  {
     }
 
     //*queryfunction to find out whether you won*/
-    function didIWin() returns (bool won) {
+    function didIWin() constant returns (bool won) {
         won = msg.sender == mindfudger;
         return won;
     } 
 
     //*function to return current score*/
-    function score() returns (uint[2] scores) {
+    function score() constant returns (uint[2] scores) {
         scores = [ players[0].wins, players[1].wins ];
     }
     
-    function owner() returns (address){
-        return players[0].addr;
+    function getOwner() constant returns (address){
+        return owner;
     }
-    function matchup() returns (address[2]){
-      return [players[0].addr, players[1].addr];
-    }
-      
 }
