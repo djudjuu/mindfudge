@@ -1,7 +1,6 @@
 pragma solidity ^0.4.8;
 contract mindfudge  {
   /* This declares a new complex type for a Player*/
-  address owner;
   struct Player
   {
     address addr;
@@ -9,6 +8,8 @@ contract mindfudge  {
     uint playeridx;
     uint wins;
   }
+
+  address owner;
   Player[2] players;
   uint[] middle = [0,0];
   uint drawpot = 0;
@@ -34,24 +35,40 @@ contract mindfudge  {
               });              
   }
 
+
+   function dummyCard(uint card){
+      if (msg.sender == players[0].addr)
+        {
+        middle[0]=card;
+        }
+        else {
+            middle[1]=card;
+        }
+        /*both players have submitted a card?*/
+        if (middle[0] != 0 && middle[1] !=0)
+        {
+        reveal();
+        }
+   }
+       
   /*function to put a card that has not been played in the middle*/
     function playACard(uint card){
       /*which player sent the card?*/
-      Player memory active;
+      uint pIdx;
       if (msg.sender == players[0].addr)
         {
-        active = players[0];
+        pIdx = 0;
         }
       if (msg.sender == players[1].addr)
         {
-        active = players[1];
+          pIdx = 1;
         } else { throw;} /*only the two players can play
       //check whether the card has not been played  before AND
       // whether the player has not played in this round before*/
-      if (active.cards[card] && middle[active.playeridx] == 0)
+      if (players[pIdx].cards[card] && middle[pIdx] == 0)
         {
-          active.cards[card] = false;
-          middle[0] = card;
+          players[pIdx].cards[card] = false;
+          middle[pIdx] = card;
         }
       /*both players have submitted a card?*/
       if (middle[0] != 0 && middle[1] !=0)
@@ -107,8 +124,17 @@ contract mindfudge  {
     function score() constant returns (uint[2] scores) {
         scores = [ players[0].wins, players[1].wins ];
     }
+
+    //*function to return both players*/
+    function matchup() constant returns (address[2] scores) {
+        scores = [ players[0].addr, players[1].addr ];
+    }
     
     function getOwner() constant returns (address){
         return owner;
+    }
+    
+    function whoIam() constant returns (address){
+        return msg.sender;
     }
 }
