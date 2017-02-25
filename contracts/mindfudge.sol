@@ -1,6 +1,6 @@
 pragma solidity ^0.4.8;
 contract mindfudge  {
-  /* This declares a new complex type for a Player*/
+  /* This declares a new complex typce for a Player*/
   struct Player
   {
     address addr;
@@ -17,7 +17,8 @@ contract mindfudge  {
   /*later: 
   //uint amount
   //uint lenGame = 5;*/
-    
+
+
   function mindfudge(address enemy)
   {
       owner = msg.sender;
@@ -133,8 +134,13 @@ contract mindfudge  {
     function getOwner() constant returns (address){
         return owner;
     }
-    
-    function whoIam() constant returns (address){
+
+    /* function to check workflow */
+    function whoAmI() constant returns (address){
         return msg.sender;
     }
+    function getMiddle() constant returns (uint[]){
+      return middle;
+    }
+
 }
