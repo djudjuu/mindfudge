@@ -11,7 +11,7 @@ contract mindfudge  {
 
   address owner;
   Player[2] players;
-  uint[] middle = [0,0];
+  uint[2] middle = [0,0];
   uint drawpot = 0;
   address mindfudger;
   /*later: 
@@ -106,7 +106,7 @@ contract mindfudge  {
       middle = [0,0];
     }
 
-    //*function to declare the game ended
+    //*function to declare the game ended/
     //later: payOut Winner*/
     function endGame(uint winner) internal
     {
@@ -139,7 +139,7 @@ contract mindfudge  {
     function whoAmI() constant returns (address){
         return msg.sender;
     }
-    function getMiddle() constant returns (uint[]){
+    function getMiddle() constant returns (uint[2]){
       return middle;
     }
 
