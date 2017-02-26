@@ -1,6 +1,6 @@
 var mf = artifacts.require("./mindfudge.sol");
-// bimus plays: 1 
-// numpy plays: 2
+// bimus plays: 1 3 2
+// numpy plays: 2 3 (3,4)
 //the first player should be the initiator of the contract- address 0
 contract('mindfudge', function(accounts) {
     it("should have bimu's adress as player 1", function() {
@@ -25,9 +25,9 @@ contract('mindfudge', function(accounts) {
         //save gamecontract in game 
         return mf.deployed().then(function(instance) {
             game = instance;
-            //play a card from numpys account
-//            return game.playACard(1, {from:bimu})
-            return game.dummyCard(b1 , {from:bimu})
+            //play a card from numpys
+            return game.playACard(b1, {from:bimu})
+            //return game.dummyCard(b1 , {from:bimu})
         }).then(function() {
             //check the middle field
             return game.getMiddle.call();
@@ -45,8 +45,8 @@ contract('mindfudge', function(accounts) {
         return mf.deployed().then(function(instance) {
             game = instance;
             //play a card from numpys account
-            //return game.playACard(ncards[0], {from:numpy})
-            return game.dummyCard(n2, {from:numpy})
+            return game.playACard(n1, {from:numpy})
+            //return game.dummyCard(n1, {from:numpy})
             
             //read what is in the middle (should be reset to zero:
         }).then(function() {
@@ -71,9 +71,6 @@ contract('mindfudge', function(accounts) {
             //assert.equal([middle0,middle1], [0,0], "the middle is not empty after reveal");
         });
     });
-    
-});
-contract('mindfudge', function(accounts) {
     it("Numpy should put a card on the second field of the middle",function() {
         var n2 = 3;
         var numpy = accounts[1];
@@ -105,9 +102,9 @@ contract('mindfudge', function(accounts) {
         }).then( function() {
             //get score (should be still 0:1)
             return game.score.call();
-        }).then(function(scoreAfterOneRound) {
-            scoreBimu = scoreAfterOneRound[0];
-            scoreNumpy = scoreAfterOneRound[1];
+        }).then(function(scoreAfterRoundTwo) {
+            scoreBimu = scoreAfterRoundTwo[0].toNumber();
+            scoreNumpy = scoreAfterRoundTwo[1].toNumber();
 
             //do assertions
             assert.equal(scoreBimu, 0, "Bimu did not loose one round");
@@ -136,7 +133,7 @@ contract('mindfudge', function(accounts) {
     });
        it("should recognize when the game is over", function() {
            var n3 = 4;
-           var b3 = 3;
+           var b3 = 2;
            var numpy = accounts[1];
            var bimu = accounts[0];
            //save gamecontract in game 
@@ -150,13 +147,13 @@ contract('mindfudge', function(accounts) {
            }).then( function() {
                return game.score.call();
            }).then( function(endScore) {
-               scoreBimu = endScore[0];
-               scoreNumpy = endScore[1];
-               return game.didIWin.call(numpy);
+               scoreBimu = endScore[0].toNumber();
+               scoreNumpy = endScore[1].toNumber();
+               return game.didIWin.call({from:numpy});
            }).then( function(NsWin) {
                numpyWins = NsWin;
                //do assertions
-               assert.equal(scoreBimu, 1, "Bimu did not loose");
+               assert.equal(scoreBimu, 0, "Bimu did not loose");
                assert.equal(scoreNumpy, 3, "Numpy did not win");
                assert.equal(numpyWins, true, "Numpy could not query he won");
            });
