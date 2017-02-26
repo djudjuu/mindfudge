@@ -191,3 +191,44 @@ contract mindfudge  {
     }
 }
 
+
+contract mindfudge4ether is mindfudge {
+  uint betSize;
+  uint[2] deposits;
+
+  event playerIsFunded(address);
+
+  modifier betsArePlaced( ) {
+    if ( deposits[0] < betSize || deposits[1] < betSize)
+      throw; _;
+  }
+
+  function mindfudge4ether( address enemy, uint _betSize)
+  {
+    betSize = _betSize;
+    deposits = [0,0];
+    mindfudge(enemy);
+  }
+
+  //function to place ether as bet
+  function bet(address beneficiary)
+    payable
+  {
+    uint to;
+    if (beneficiary == players[0].addr) { to = 0;}
+    else { to = 1;}
+    deposits[to] += msg.value;
+    if (deposits[to] > betSize){
+      playerIsFunded(beneficiary);
+    }
+  }
+  function playACard(uint card)
+    betsArePlaced()
+  {
+    mindfudge.playACard(card);
+  }
+  function showMoney() constant returns (uint[2]) {
+      return [deposits[0], deposits[1]];
+    }
+      
+}
