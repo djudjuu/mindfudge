@@ -1,43 +1,57 @@
 pragma solidity ^0.4.8;
+
+
 contract mindfudge  {
   /* This declares a new complex typce for a Player*/
   struct Player
   {
     address addr;
     bool[5] cards;
-      uint points;
+    uint points;
+    uint deposit;
   }
+  
 
   address owner;
+  uint betSize;
   Player[2] players;
   uint[2] middle = [0,0];
   uint drawpot = 0;
   address mindfudger;
   /*later: 
-  //uint amount
   //uint lenGame = 5;*/
   event waiting4(address slowDude);
   event cardsRevealed(uint card1, uint card2);
   event logString(string);
+  event playerIsFunded(address);
   event gameEnded(string text, uint winnerIdx);
 
-
-  function mindfudge(address enemy)
+  //use this once I can catch exceptions in tests
+  //modifier inRange(uint _card) { if (_card < 1 || _card > 5)  throw; _; }
+  modifier betsArePlaced( ) {
+    if ( players[0].deposit < betSize || players[1].deposit < betSize)
+      throw; _;
+  }
+  
+  function mindfudge(address enemy, uint _betSize)
   {
       owner = msg.sender;
+      betSize = _betSize;
       players[0] = Player({
-              addr: owner,
-                cards:[true, true, true ,true, true],
-              points: 0
-              });
+        addr: owner,
+            cards:[true, true, true ,true, true],
+            points: 0,
+            deposit: 0
+            });
       players[1] = Player({
-              addr: enemy,
-                cards:[true, true, true ,true, true],
-              points: 0
-              });              
+        addr: enemy,
+            cards:[true, true, true ,true, true],
+            points: 0,
+            deposit: 0
+            });              
   }
 
-  //first prototype
+   //first prototype
    function dummyCard(uint card){
       if (msg.sender == players[0].addr)
         {
@@ -56,9 +70,25 @@ contract mindfudge  {
         reveal();
         }
    }
-       
-  /*function to put a card that has not been played in the middle*/
-    function playACard(uint card){
+
+   //function to place ether as bet
+     function bet(address beneficiary)
+       payable
+     {
+       uint to;
+       if (beneficiary == players[0].addr) { to = 0;}
+       else { to = 1;}
+       players[to].deposit += msg.value;
+       if (players[to].deposit > betSize){
+         playerIsFunded(beneficiary);
+       }
+     }
+
+    /*function to put a card that has not been played in the middle*/
+    function playACard(uint card)
+    //inRange(card)
+      betsArePlaced()
+    {
       /*which player sent the card?*/
       uint pIdx;
       if (msg.sender == players[0].addr)
@@ -183,5 +213,7 @@ contract mindfudge  {
     function showCards(uint pIdx) constant returns (bool[5]){
       return players[pIdx].cards;
     }
-
+    function showMoney() constant returns (uint[3]) {
+      return [players[0].deposit, players[1].deposit, betSize];
+    }
 }
