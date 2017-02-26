@@ -37,7 +37,7 @@ contract mindfudge  {
               });              
   }
 
-
+  //first prototype
    function dummyCard(uint card){
       if (msg.sender == players[0].addr)
         {
@@ -151,6 +151,8 @@ contract mindfudge  {
     //suicide(mindfudger);*/
     }
 
+    //convenience functions to learn, get Stats and debug workflow
+
     //*queryfunction to find out whether you won*/
     function didIWin() constant returns (bool won) {
         won = msg.sender == mindfudger;
@@ -171,14 +173,13 @@ contract mindfudge  {
         return owner;
     }
 
-    /* function to check workflow */
     function whoAmI() constant returns (address){
         return msg.sender;
     }
     function getMiddle() constant returns (uint[2]){
       return middle;
     }
-    /*convenience function for me*/
+
     function showCards(uint pIdx) constant returns (bool[5]){
       return players[pIdx].cards;
     }
