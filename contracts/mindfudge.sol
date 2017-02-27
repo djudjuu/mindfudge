@@ -24,7 +24,7 @@ contract mindfudge  {
   //use this once I can catch exceptions in tests
   //modifier inRange(uint _card) { if (_card < 1 || _card > 5)  throw; _; }
   
-  function mindfudge(address enemy, uint _betSize)
+  function mindfudge(address enemy)
   {
       owner = msg.sender;
       players[0] = Player({

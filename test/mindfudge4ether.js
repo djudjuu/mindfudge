@@ -38,5 +38,44 @@ contract('mindfudge4ether', function(accounts) {
             assert.equal(middle0, 2 ,"card was not played");
         });
     });
+    it("should sent ether to the winner", function() {
+        var bimu = accounts[0];
+        var numpy = accounts[1];
+        var potBefore;
+        var potAfter;
+        var bimuWins;
+        return mfe.deployed().then(function(instance) {
+            game = instance;
+            return game.potSize.call();
+        }).then(function(pot1) {
+            potBefore = pot1.toNumber();
+            //play cards until game over
+            return game.playACard(1,{from:numpy});
+        }).then(function() {
+            return game.playACard(3,{from:bimu});
+        }).then(function() {
+            return game.playACard(2,{from:numpy});
+        }).then(function() {
+            return game.playACard(4,{from:bimu});
+        }).then(function() {
+            return game.playACard(3,{from:numpy});
+        }).then(function() {
+            return game.potSize.call();
+        }).then(function(pot2) {
+            potAfter = pot2.toNumber();
+            return game.didIWin(bimu, {from:bimu});
+        }).then(function(winnerBool) {
+            bimuWins = winnerBool;
+            return game.score.call();
+        }).then(function(score) {
+            b = score[0].toNumber();
+            n = score[1].toNumber();
+            assert.equal(b,3,"bimu did not win all rounds");
+            assert.equal(n,0,"numpy did not win all rounds");
+            assert.equal(bimuWins, true, "bimu was not registered as winner");
+            assert.equal(potBefore, web3.toWei(4,"ether") , "pot did not hold 4 ether");
+            assert.equal(potAfter, 0 , "payout did not happen");
+        });
+    });
 });
 
