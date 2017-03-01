@@ -1,6 +1,6 @@
 pragma solidity ^0.4.8;
-
-contract mindfudge4ether {
+/// @title play mindfudge for ether and within a time limit
+contract mindfudge4etherTimed {
   /* This declares a new complex typce for a Player*/
   struct Player
   {
@@ -9,18 +9,19 @@ contract mindfudge4ether {
     uint points;
   }
   address owner;
+  //address opponent = 0x9bce7f0538bf8e85c15f6b131e980df49f403a431;
   uint betSize; //in Wei
   uint[2] deposits;
   Player[2] players;
   uint[2] middle = [0,0];
   uint drawpot = 0; //extrapoints 4 draws
-  uint[2] clocks;
+  uint[2] clocks =[0,0];
   //clocks are counters who dawdled the most time
   uint waitingTime; //measured here
   uint public fundingStart; //time of contract creation
-  uint public fundTime = 10*60;//10 minutes time to commit funds
-  uint public gameEndTime;
+  uint public fundTime;//10 minutes time to commit funds
   uint public gameDuration; // in seconds
+  uint public gameEndTime;
   address mindfudger; //address of winner
   /*later: 
   //uint lenGame = 5;*/
@@ -30,28 +31,38 @@ contract mindfudge4ether {
   event logString(string);
   event gameEnded(string text, uint winnerIdx);
   
-  modifier betsArePlaced( ) {
+  modifier betsArePlaced() {
     if ( deposits[0] < betSize || deposits[1] < betSize)
       throw; _;
   }
-  modifier onlyAfterFundingRound() {
-    if ( now > fundingStart + fundTime )
-      throw; _;
-  }
-  //Attention: this modifier requires the end of the game to be set
-  modifier beforeGameEnded() {
-    if ( now > gameEndTime )
-      resolveUnfinishedGame(); _;
-  }
-
+  modifier onlyBefore(uint _time) { if (now >= _time) throw; _; }
+  modifier onlyAfter(uint _time) { if (now <= _time) throw; _; }
+  // if ( now < fundingStart + fundTime ){throw;}
+  
   //use this once I can catch exceptions in tests
   //modifier inRange(uint _card) { if (_card < 1 || _card > 5)  throw; _; }
-  
-  function mindfudge4ether(address enemy, uint _betSizeInWei, uint _gameDuration )
+
+  /**
+ create a new mindfudge game 
+ @param opponent your friends address, -
+ @param _betSizeInWei the amount of ether you want to play for (inWei) -
+ @param _gameDuration the game duration in seconds (after it
+  ends, the contract will suicide and send all its funds to the
+  player, who lost the least amount of time before playing his
+  cards).
+ @param _fundTime timeWindow after creation during which funds can be placed
+**/
+  function mindfudge4etherTimed(
+                                address opponent,
+                                uint _betSizeInWei,
+                                uint _fundTime,
+                                uint _gameDuration)
   {
     fundingStart = now;
     betSize = _betSizeInWei;
     gameDuration = _gameDuration;
+    fundTime = _fundTime;
+    gameEndTime = fundingStart + fundTime + gameDuration;
     owner = msg.sender;
     players[0] = Player({
       addr: owner,
@@ -59,51 +70,65 @@ contract mindfudge4ether {
           points: 0,
           });
     players[1] = Player({
-      addr: enemy,
+      addr: opponent,
           cards:[true, true, true ,true, true],
           points: 0,
           });              
   }
-//function to place ether as bet
+///function to place ether as bet
   function bet(address beneficiary)
     payable
+    onlyBefore(fundingStart + fundTime)
   {
     uint to;
     if (beneficiary == players[0].addr) { to = 0;}
     else { to = 1;}
     deposits[to] += msg.value;
-    if (deposits[to] > betSize){
-      playerIsFunded(beneficiary);
-      if (deposits[1-1**to] > betSize) {
-        //both players funded!
-        startGame();
+    if (deposits[to] >=  betSize)
+      {
+        playerIsFunded(beneficiary);
+        //if (deposits[1-1**to] >= betSize) {
+        if (deposits[0] >= betSize && deposits[1] >= betSize)
+          {
+            //both players funded!
+            gameEndTime = now + gameDuration;
+            //gameEndTime -= fundTime - (now-fundingStart);
+          }
       }
-    }
   }
-  //if one player fails to place a bet, this function can be
-  //called by the other one so he will be refunded
+  /**
+  return Funds if one player fails to place a bet. this function can be
+  called by the other one so he will be refunded
+  the player who committed to little can not be refunded
+  his ether goes to the other one as well
+  **/
   function returnFunds() 
-    onlyAfterFundingRound
+    onlyAfter(fundingStart + fundTime)
+    returns (bool)
   {
+    //return msg.sender.send(this.balance);
     if ( msg.sender == players[0].addr &&
          deposits[1]<betSize){
-      if (!msg.sender.send(deposits[0])) throw;
+      if (msg.sender.send(this.balance)){
+        logString("funds returned to player 0");
+      } else {throw;}
     } else if (msg.sender == players[1].addr &&
                deposits[0]<betSize) {
-      if (!msg.sender.send(deposits[1])) throw;
-        }
+      if (msg.sender.send(this.balance)) {
+        logString("funds returned to player 1");
+      } else {throw;}
+    }
   }
     
-  function startGame() internal {
-    gameEndTime = now + gameDuration;
-  }
+  
     
 
-    /*function to put a card that has not been played in the middle*/
+  /// function to put a card that has not been played in the middle
     function playACard(uint card)
       //inRange(card)
-      betsArePlaced()
-        {
+      betsArePlaced
+      onlyBefore(gameEndTime)
+    {
       /*which player sent the card?*/
       uint pIdx;
       if (msg.sender == players[0].addr)
@@ -161,9 +186,9 @@ contract mindfudge4ether {
         }
     }
     
-    /*function to find out whose card is higher and assign points*/
+    ///function to find out whose card is higher and assign points
     function reveal() internal{
-      /*DRAW: no one gets a point, but next round is for one more*/
+      //DRAW: no one gets a point, but next round is for one more
       if ( middle[0] == middle[1] ) {
             drawpot += 1;
       }
@@ -177,32 +202,79 @@ contract mindfudge4ether {
           //fire event:
           cardsRevealed(middle[0], middle[1]);
 
-          /* augment winners score*/
+          // augment winners score
           players[winneridx].points += 1 + drawpot;
-          /*and reset possible extrapoints*/
+          //and reset possible extrapoints
           drawpot = 0;
 
-          //*check if one player has more than half of the cards*/
+          //check if one player has more than half of the cards
           if ( players[winneridx].points > 2 )
             {
               endGame(winneridx);
             }
         }
-      //*reset middle*/
+      //reset middle
       middle = [0,0];
     }
 
-    //*function to declare the game ended/
-    //later: payOut Winner*/
+    ///function to declare the game ended
     function endGame(uint winner) internal
     {
-      gameEnded("game is Over and the winner is: ", winner);
-      mindfudger = players[winner].addr;
-      if (!mindfudger.send(betSize*2)) { throw;}
+      if (winner == 2) {payOutBoth();}
       else {
-        deposits = [0,0];
-        logString("winner paid out");}
+        gameEnded("game is Over and the winner is: ", winner);
+        mindfudger = players[winner].addr;
+        if (!mindfudger.send(betSize*2)) { throw;}
+        else {
+          deposits = [0,0];
+          logString("winner paid out");}
+      }
     }
+    function payOutBoth() internal
+    {
+      logString("paying Out both!");
+      if ( !players[0].addr.send(deposits[0]) &&
+           !players[1].addr.send(deposits[1])) 
+      {
+        logString("something did not work");
+        throw;
+      }
+      else
+        {
+          //suicide;
+        }
+     }
+    
+    /// function to resolve an unfinished game:
+    /// it pays out the player who reacted quicker (not his fault
+    // that the game ended unresolved, if none played a card,
+    // payout is split
+    function resolveUnfinishedGame() 
+    //onlyAfter(gameEndTime)
+    {
+      uint wIdx;
+      if (clocks[0] == clocks[1])
+        {
+          //if no player could play a card, both are paid out
+          if (middle[0] == middle[1]) { wIdx = 2;}
+          else
+            {
+              //if one player plays no card at all, he also gets no
+              //time on his clock, so then the one who has a card in
+              //the middle wins (also catching the unlikely case that
+              //somehow both players waited the exact amount of time)
+              if (middle[0] > middle[1]) { wIdx = 0;} else {wIdx = 1;}
+            }
+        }
+      else
+        //find out who is having a smaller clock :D
+        {
+        if (clocks[0] < clocks[1] ) { wIdx = 0;} else {wIdx = 1;}
+        }
+      // pay him out and (destroy contract)
+      endGame(wIdx);
+    }
+
 
     //convenience functions to learn, get Stats and debug flow within remix
 
@@ -223,10 +295,15 @@ contract mindfudge4ether {
     function getMiddle() constant returns (uint[2]){
       return middle;
     }
+  
+  function showMoney() constant returns (uint[3]) {
+    return [deposits[0], deposits[1], this.balance];
+   }
 
     function showCards(uint pIdx) constant returns (bool[5]){
       return players[pIdx].cards;
     }
+
 }
 
 
