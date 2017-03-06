@@ -10,7 +10,7 @@ contract('mindfudge4ether', function(accounts) {
             game = instance;
             return game.playACard(1, {from:bimu});
         }).then(function() {
-            return game.getMiddle().call();
+            return game.getMiddle.call();
         }).then(function(middle) {
             middle0 = middle[0].toNumber();
             assert.equal(middle0,0,"card was played unfunded");
@@ -78,4 +78,3 @@ contract('mindfudge4ether', function(accounts) {
         });
     });
 });
-

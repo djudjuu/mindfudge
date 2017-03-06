@@ -9,6 +9,7 @@ contract mindfudge4etherTimed {
     uint points;
   }
   address owner;
+  uint round;
   //address opponent = 0x9bce7f0538bf8e85c15f6b131e980df49f403a431;
   uint betSize; //in Wei
   uint[2] deposits;
@@ -58,12 +59,14 @@ contract mindfudge4etherTimed {
                                 uint _fundTime,
                                 uint _gameDuration)
   {
+
     fundingStart = now;
     betSize = _betSizeInWei;
     gameDuration = _gameDuration;
     fundTime = _fundTime;
     gameEndTime = fundingStart + fundTime + gameDuration;
     owner = msg.sender;
+    round = 0;
     players[0] = Player({
       addr: owner,
           cards:[true, true, true ,true, true],
@@ -188,9 +191,15 @@ contract mindfudge4etherTimed {
     
     ///function to find out whose card is higher and assign points
     function reveal() internal{
+      round += 1;
       //DRAW: no one gets a point, but next round is for one more
+      //when the game ends with a draw, both are paid out
       if ( middle[0] == middle[1] ) {
             drawpot += 1;
+            //did the game end in a draw?
+            //then the overall score has to be a draw to!
+            //pay out both:
+            if (round == 5 ) {endGame(2);}
       }
       else
         {
@@ -212,10 +221,12 @@ contract mindfudge4etherTimed {
             {
               endGame(winneridx);
             }
-        }
+          
       //reset middle
       middle = [0,0];
     }
+    }
+
 
     ///function to declare the game ended
     function endGame(uint winner) internal
@@ -233,11 +244,12 @@ contract mindfudge4etherTimed {
     function payOutBoth() internal
     {
       logString("paying Out both!");
-      if ( !players[0].addr.send(deposits[0]) &&
-           !players[1].addr.send(deposits[1])) 
+      bool p0returned = players[0].addr.send(deposits[0]);
+      bool p1returned = players[1].addr.send(deposits[1]);
+      if (!p0returned || !p1returned )
       {
         logString("something did not work");
-        throw;
+        //throw;
       }
       else
         {
@@ -252,7 +264,7 @@ contract mindfudge4etherTimed {
     function resolveUnfinishedGame() 
     //onlyAfter(gameEndTime)
     {
-      uint wIdx;
+      uint wIdx ;
       if (clocks[0] == clocks[1])
         {
           //if no player could play a card, both are paid out
@@ -284,7 +296,7 @@ contract mindfudge4etherTimed {
         return won;
     }
     function potSize() constant returns (uint) {
-      return deposits[0] + deposits[1];
+      return this.balance;
     }
 
     //*function to return current score*/

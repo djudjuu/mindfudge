@@ -41,17 +41,17 @@ contract mindfudge4ether {
   //Attention: this modifier requires the end of the game to be set
   modifier beforeGameEnded() {
     if ( now > gameEndTime )
-      resolveUnfinishedGame(); _;
+      throw; _;
   }
 
   //use this once I can catch exceptions in tests
   //modifier inRange(uint _card) { if (_card < 1 || _card > 5)  throw; _; }
   
-  function mindfudge4ether(address enemy, uint _betSizeInWei, uint _gameDuration )
+  function mindfudge4ether(address enemy, uint _betSizeInWei )
   {
     fundingStart = now;
     betSize = _betSizeInWei;
-    gameDuration = _gameDuration;
+    gameDuration = 20;
     owner = msg.sender;
     players[0] = Player({
       addr: owner,
@@ -72,9 +72,9 @@ contract mindfudge4ether {
     if (beneficiary == players[0].addr) { to = 0;}
     else { to = 1;}
     deposits[to] += msg.value;
-    if (deposits[to] > betSize){
+    if (deposits[to] >= betSize){
       playerIsFunded(beneficiary);
-      if (deposits[1-1**to] > betSize) {
+      if (deposits[0] >= betSize && deposits[1] >= betSize) {
         //both players funded!
         startGame();
       }
@@ -187,9 +187,15 @@ contract mindfudge4ether {
             {
               endGame(winneridx);
             }
-        }
+       
       //*reset middle*/
       middle = [0,0];
+    }
+    if ( players[0].points + players[1].points + drawpot > 5) {
+       //all points given out, but no one has more than 2
+       //game ends as a draw
+       endGame(2);
+    } 
     }
 
     //*function to declare the game ended/
@@ -203,6 +209,22 @@ contract mindfudge4ether {
         deposits = [0,0];
         logString("winner paid out");}
     }
+
+    function payOutBoth() internal
+    {
+      logString("paying Out both!");
+      if ( !players[0].addr.send(deposits[0]) &&
+           !players[1].addr.send(deposits[1])) 
+      {
+        logString("something did not work");
+        throw;
+      }
+      else
+        {
+          //suicide;
+        }
+     }
+
 
     //convenience functions to learn, get Stats and debug flow within remix
 
