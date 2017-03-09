@@ -1,6 +1,6 @@
 pragma solidity ^0.4.8;
 /// @title play mindfudge for ether and within a time limit
-contract mindfudge4etherTimed {
+contract mindfudge02 {
   /* This declares a new complex typce for a Player*/
   struct Player
   {
@@ -53,7 +53,7 @@ contract mindfudge4etherTimed {
   cards).
  @param _fundTime timeWindow after creation during which funds can be placed
 **/
-  function mindfudge4etherTimed(
+  function mindfudge02(
                                 address opponent,
                                 uint _betSizeInWei,
                                 uint _fundTime,
@@ -134,22 +134,11 @@ contract mindfudge4etherTimed {
     {
       /*which player sent the card?*/
       uint pIdx;
-      if (msg.sender == players[0].addr)
-        {
-        pIdx = 0;
-        }
-      else
-        {
-          if (msg.sender == players[1].addr)
-            {
-              pIdx = 1;
-            }
-          else
-            {
-              logString("you are not part of the game");
-            throw;
-            }
-        }
+      if (msg.sender == players[0].addr) {pIdx = 0;}
+      else {
+          if (msg.sender == players[1].addr) {pIdx = 1;}
+          else { throw;}//player not part of the game
+      }
       //check whether card is in legal range (TODO: find out how to
       //catch exceptions in tests
       //AND whether the card has not been played  before
@@ -161,31 +150,22 @@ contract mindfudge4etherTimed {
             middle[pIdx] = card;
             //fire events:
             logString("card Played!Now waiting 4:");
-          } else
-            {
-              logString("there already was a card in the middle");
-            }
-        } else
-          {
-            logString("illegal card! (already played)");
-          }
-      } else
-        {
-          logString("illegal card! (out of game range)");
-        }
+          } else { logString("middle is not empty");}
+        } else { logString("card was already played!");}
+      } else { logString("card does not exist!");}
       /*both players have submitted a card?*/
-      if (middle[0] != 0 && middle[1] != 0) {
-        //slower player gets the waited time added on his clock
-        clocks[pIdx] += now - waitingTime;
-        //also cards are revealed :D
-        reveal();
+      if (middle[0] != 0 && middle[1] != 0)
+        {
+          //slower player gets the waited time added on his clock
+          clocks[pIdx] += now - waitingTime;
+          //also cards are revealed :D
+          reveal();
         }
       else
         {
           waiting4(players[1-1**pIdx].addr);
           //first player gets to reset the waiting time clock to now
           waitingTime = now;
-          
         }
     }
     
@@ -193,70 +173,57 @@ contract mindfudge4etherTimed {
     function reveal() internal{
       round += 1;
       //DRAW: no one gets a point, but next round is for one more
-      //when the game ends with a draw, both are paid out
-      if ( middle[0] == middle[1] ) {
-            drawpot += 1;
-            //did the game end in a draw?
-            //then the overall score has to be a draw to!
-            //pay out both:
-            if (round == 5 ) {endGame(2);}
-      }
-      else
+      //when the game ends with a draw, the score is a draw too
+      //so both are paid out
+      if ( middle[0] == middle[1] )
+        {
+          drawpot += 1;
+          if (round == 5 ) {endGame(2);}
+        }
+      else //no draw -> determine winner
         {
           uint winneridx;
-          //determine winner:
           if ( middle[0]>middle[1] ) {
               winneridx = 0;
           } else { winneridx = 1;}
-          //fire event:
-          cardsRevealed(middle[0], middle[1]);
-
-          // augment winners score
+          //alert players by firing event:
+          cardsRevealed(middle[0], middle[1]); 
+          // augment winners score:
           players[winneridx].points += 1 + drawpot;
           //and reset possible extrapoints
-          drawpot = 0;
-
+          drawpot = 0; 
           //check if one player has more than half of the cards
+          //if so end the game
           if ( players[winneridx].points > 2 )
             {
               endGame(winneridx);
             }
-          
-      //reset middle
+        }
+      //always reset middle
       middle = [0,0];
     }
-    }
 
-
-    ///function to declare the game ended
+    ///function to pay out the winner and suicide the contract
     function endGame(uint winner) internal
     {
       if (winner == 2) {payOutBoth();}
-      else {
-        gameEnded("game is Over and the winner is: ", winner);
-        mindfudger = players[winner].addr;
-        if (!mindfudger.send(betSize*2)) { throw;}
-        else {
-          deposits = [0,0];
-          logString("winner paid out");}
-      }
+      else
+        {
+          gameEnded("game is Over and the winner is: ", winner);
+          suicide(players[winner].addr);
+        }
     }
+
     function payOutBoth() internal
     {
       logString("paying Out both!");
-      bool p0returned = players[0].addr.send(deposits[0]);
-      bool p1returned = players[1].addr.send(deposits[1]);
-      if (!p0returned || !p1returned )
-      {
-        logString("something did not work");
-        //throw;
+      if (!players[0].addr.send(deposits[0]) ) {
+        logString("somehow paying out did not work.");
+        throw;
       }
-      else
-        {
-          //suicide;
-        }
-     }
-    
+      else { suicide(players[1].addr);}
+    }
+         
     /// function to resolve an unfinished game:
     /// it pays out the player who reacted quicker (not his fault
     // that the game ended unresolved, if none played a card,
@@ -287,33 +254,11 @@ contract mindfudge4etherTimed {
       endGame(wIdx);
     }
 
-
-    //convenience functions to learn, get Stats and debug flow within remix
-
-    //*queryfunction to find out whether you won*/
-    function didIWin() constant returns (bool won) {
-        won = msg.sender == mindfudger;
-        return won;
-    }
-    function potSize() constant returns (uint) {
-      return this.balance;
-    }
-
+    //convenience functions 
+  
     //*function to return current score*/
     function score() constant returns (uint[2] scores) {
         scores = [ players[0].points, players[1].points ];
-    }
-
-    function getMiddle() constant returns (uint[2]){
-      return middle;
-    }
-  
-  function showMoney() constant returns (uint[3]) {
-    return [deposits[0], deposits[1], this.balance];
-   }
-
-    function showCards(uint pIdx) constant returns (bool[5]){
-      return players[pIdx].cards;
     }
 
 }

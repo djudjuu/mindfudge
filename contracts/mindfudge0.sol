@@ -1,6 +1,7 @@
 pragma solidity ^0.4.8;
 
-contract mindfudge  {
+///first prototype of the mindfudge game
+contract mindfudge0  {
   /* This declares a new complex typce for a Player*/
   struct Player
   {
@@ -24,7 +25,7 @@ contract mindfudge  {
   //use this once I can catch exceptions in tests
   //modifier inRange(uint _card) { if (_card < 1 || _card > 5)  throw; _; }
   
-  function mindfudge(address enemy)
+  function mindfudge0(address enemy)
   {
       owner = msg.sender;
       players[0] = Player({

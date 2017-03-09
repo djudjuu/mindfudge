@@ -1,4 +1,4 @@
-var mf = artifacts.require("./mindfudge.sol");
+var mf = artifacts.require("./mindfudge0.sol");
 
 // bimus plays: 1 3 2
 // numpy plays: 2 3 (3,4)

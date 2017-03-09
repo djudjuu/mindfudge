@@ -1,6 +1,6 @@
-var mfe = artifacts.require("./mindfudge4ether.sol");
+var mfe = artifacts.require("./mindfudge01.sol");
 
-contract('mindfudge4ether', function(accounts) {
+contract('mindfudge01', function(accounts) {
     it("should THROW to reject a played card before both players are funded", function() {
         var bimu = accounts[0];
         var numpy = accounts[1];

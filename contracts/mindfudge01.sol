@@ -1,6 +1,7 @@
 pragma solidity ^0.4.8;
 
-contract mindfudge4ether {
+///mindfudge version where opponents can play for ether
+contract mindfudge01 {
   /* This declares a new complex typce for a Player*/
   struct Player
   {
@@ -47,7 +48,7 @@ contract mindfudge4ether {
   //use this once I can catch exceptions in tests
   //modifier inRange(uint _card) { if (_card < 1 || _card > 5)  throw; _; }
   
-  function mindfudge4ether(address enemy, uint _betSizeInWei )
+  function mindfudge01(address enemy, uint _betSizeInWei )
   {
     fundingStart = now;
     betSize = _betSizeInWei;

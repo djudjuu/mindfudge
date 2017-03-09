@@ -1,9 +1,6 @@
-var mft2 = artifacts.require("./mindfudge4etherTimed.sol");
+var mft2 = artifacts.require("./mindfudge03.sol");
 
-//when this test is run with truffle test/testdraw.js it passes
-//only when it is run after other ones it fails....2do: find out why
-
-contract('mindfudge4etherTimedDraw', function(accounts) {
+contract('mindfudge', function(accounts) {
     it("should pay out both players if there is a draw", function() {
         var bimu = accounts[0];
         var numpy = accounts[1];
@@ -47,10 +44,6 @@ contract('mindfudge4etherTimedDraw', function(accounts) {
         }).then(function() {
             bAfter = web3.eth.getBalance(bimu);
             nAfter = web3.eth.getBalance(numpy);
-            return game.potSize.call();
-        }).then(function(pot2) {
-            potAfter = pot2.toNumber();
-            assert.equal(potAfter, 0 , "payout did not happen");
             assert.notEqual(bBefore, bAfter, "bimu did not get paid");
             assert.notEqual(nBefore, nAfter, "numpy did not get paid");
         });

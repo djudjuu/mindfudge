@@ -1,5 +1,4 @@
 # mindfudge
-work in progress...
 ...on a small dapp-game for 2 players to play over ethereum blockchain 
 
  ##  Rules
@@ -10,5 +9,7 @@ work in progress...
  its possible to bet ether and to set time limits to submitting them
  and maximum game length
 
-!getting the tests to work might require adjusting the migration file,
-tests for timelimits are not working.
+(work in progress... later versions should implement playing cards
+needs to be done in a 2stepfashion, first hash, then revealmessage)
+
+
